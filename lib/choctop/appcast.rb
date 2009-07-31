@@ -1,8 +1,19 @@
 module ChocTop::Appcast
+  def set_marketing_version
+    puts "Set marcketing version"
+    #TODO vefify that the current market version is smaller that the new.
+    sh "agvtool new-marketing-version #{@marketVersion}"
+  end
+  
+  
   def make_build
     if skip_build
       puts "Skipping build task..."
     else
+      sh "agvtool next-version -all" 
+      if @verType == 'CUSTOMER'
+         set_marketing_version
+      end
       sh "xcodebuild -configuration #{build_type}"
     end
   end

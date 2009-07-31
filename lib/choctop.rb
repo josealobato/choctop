@@ -152,6 +152,10 @@ class ChocTop
   # Default: 12 (px)
   attr_reader :icon_text_size
   
+  # The type of version to create.
+  # In this desing it could be CUSTOMER or TESTER
+  
+  
   def icon_text_size=(size)
     @icon_text_size = size.to_i
   end
@@ -216,15 +220,28 @@ class ChocTop
   def define_tasks
     return unless Object.const_defined?("Rake")
     
+    # versionType just look for the Environment variables to get the parameters for the 
+    # build and distribution. It will look for the "marketVersion" setting up @verType
+    task :versionType do
+      puts 'Creating version type.'
+      if ENV['marketVersion']!=nil
+        @verType = 'CUSTOMER'
+        @marketVersion = ENV['marketVersion']
+      else
+        @verType = 'TESTER'
+      end 
+      puts "Creating a #{@verType} with market version #{@marketVersion!=nil ? @marketVersion : 'unchanged'}."
+    end
+    
     desc "Build Xcode #{build_type}"
-    task :build => "build/#{build_type}/#{target}/Contents/Info.plist"
+    task :build => [:versionType, "build/#{build_type}/#{target}/Contents/Info.plist"]
     
     task "build/#{build_type}/#{target}/Contents/Info.plist" do
       make_build
     end
     
     desc "Create the dmg file for appcasting"
-    task :dmg => :build do
+    task :dmg => [:versionType, :build] do
       detach_dmg
       make_dmg
       detach_dmg
@@ -255,4 +272,4 @@ class ChocTop
 end
 require "choctop/appcast"
 require "choctop/dmg"
-
+ 
