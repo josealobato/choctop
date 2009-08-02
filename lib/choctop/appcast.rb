@@ -9,13 +9,20 @@ module ChocTop::Appcast
   def make_build
     if skip_build
       puts "Skipping build task..."
-    else 
+    else
+      sh "git reset --hard" unless @git==false 
       if @versioning == true
         sh "agvtool next-version -all" 
         load_defaults
         if @verType == 'CUSTOMER'
            set_marketing_version
         end
+      end
+      if @git == true then
+        comment  = "#{@marketVersion}(#{@version})_#{@verType}"
+        sh "git add ."
+        sh "git commit -m \"#{comment}\" "        
+        puts "sh git tag -a -m \"#{comment}\" "
       end
       sh "xcodebuild -configuration #{build_type}"
     end

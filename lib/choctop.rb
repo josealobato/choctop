@@ -157,6 +157,10 @@ class ChocTop
   
   # Flag to enable the handlign of versions
   attr_accessor :versioning
+  attr_accessor :marketVersion    
+  
+  # Flag to enable the GIT commiting
+  attr_accessor :git
   
   
   def icon_text_size=(size)
@@ -194,6 +198,14 @@ class ChocTop
     @build_type = ENV['BUILD_TYPE'] || 'Release' 
     
     @versioning ||= false
+    @versioning==false ? @git=false : @git||=false
+    @versioning==true ? (puts "Versioning ON") : (puts "Versioning OFF")
+    @git==true ? (puts "GIT ON") : (puts "GIT OFF")
+    if @versioning then
+      @marketVersion = info_plist['CFBundleShortVersionString']
+    end
+    
+    
     
     if @su_feed_url = info_plist['SUFeedURL']
       @appcast_filename ||= File.basename(su_feed_url)
