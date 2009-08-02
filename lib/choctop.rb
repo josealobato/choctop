@@ -153,7 +153,10 @@ class ChocTop
   attr_reader :icon_text_size
   
   # The type of version to create.
-  # In this desing it could be CUSTOMER or TESTER
+  # In this desing it could be CUSTOMER or TESTER 
+  
+  # Flag to enable the handlign of versions
+  attr_accessor :versioning
   
   
   def icon_text_size=(size)
@@ -169,7 +172,7 @@ class ChocTop
   end
   
   def info_plist
-    @info_plist ||= OSX::NSDictionary.dictionaryWithContentsOfFile(File.expand_path(info_plist_path)) || {}
+    @info_plist = OSX::NSDictionary.dictionaryWithContentsOfFile(File.expand_path(info_plist_path)) || {}
   end
   
   # Add an explicit file/bundle/folder into the DMG
@@ -182,17 +185,15 @@ class ChocTop
   end
   alias_method :add_file, :file
   
-  def initialize
-    $choctop = $sparkle = self # define a global variable for this object ($sparkle is legacy)
-    
-    yield self if block_given?
-    
-    # Defaults
+  def load_defaults
+      # Defaults
     @info_plist_path ||= 'Info.plist'
     @name ||= info_plist['CFBundleExecutable']
     @name = File.basename(File.expand_path(".")) if name.to_s == "${EXECUTABLE_NAME}" || @name.nil?
-    @version ||= info_plist['CFBundleVersion']
-    @build_type = ENV['BUILD_TYPE'] || 'Release'
+    @version = info_plist['CFBundleVersion']
+    @build_type = ENV['BUILD_TYPE'] || 'Release' 
+    
+    @versioning ||= false
     
     if @su_feed_url = info_plist['SUFeedURL']
       @appcast_filename ||= File.basename(su_feed_url)
@@ -211,7 +212,16 @@ class ChocTop
     @volume_icon ||= File.dirname(__FILE__) + "/../assets/DefaultVolumeIcon.icns"
     @icon_size ||= 104
     @icon_text_size ||= 12
-
+  
+  end
+  
+  def initialize
+    $choctop = $sparkle = self # define a global variable for this object ($sparkle is legacy)
+    
+    yield self if block_given? 
+    
+    load_defaults
+    
     add_file "build/#{build_type}/#{target}", :position => app_icon_position
     
     define_tasks

@@ -2,17 +2,20 @@ module ChocTop::Appcast
   def set_marketing_version
     puts "Set marcketing version"
     #TODO vefify that the current market version is smaller that the new.
-    sh "agvtool new-marketing-version #{@marketVersion}"
+    sh "agvtool new-marketing-version #{@marketVersion}"   
   end
   
   
   def make_build
     if skip_build
       puts "Skipping build task..."
-    else
-      sh "agvtool next-version -all" 
-      if @verType == 'CUSTOMER'
-         set_marketing_version
+    else 
+      if @versioning == true
+        sh "agvtool next-version -all" 
+        load_defaults
+        if @verType == 'CUSTOMER'
+           set_marketing_version
+        end
       end
       sh "xcodebuild -configuration #{build_type}"
     end
@@ -95,6 +98,7 @@ module ChocTop::Appcast
     _host = host.blank? ? "" : "#{host}:"
     _user = user.blank? ? "" : "#{user}@"
     sh %{rsync #{rsync_args} #{build_path}/ #{_user}#{_host}#{remote_dir}}
+    #puts %{rsync #{rsync_args} #{build_path}/ #{_user}#{_host}#{remote_dir}}
   end
   
   # Returns a file path to the dsa_priv.pem file

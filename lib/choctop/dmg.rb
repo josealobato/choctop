@@ -1,5 +1,6 @@
 module ChocTop::Dmg
   def prepare_files
+    FileUtils.rm_r(src_folder,:force=>true)
     FileUtils.mkdir_p(src_folder)
     self.files = files.find_all do |file|
       path, options = file
