@@ -1,4 +1,35 @@
-module ChocTop::Appcast
+module ChocTop::Appcast 
+  
+  def set_sparcke_configuration
+    # Open an load the info.plist
+    file = File.new("Info.plist")
+    doc = Document.new(file)
+    root = doc.root 
+    
+    # Look for the URL index
+    index=0
+    root.elements[1].each_element do |element| 
+      index = index + 1 
+      if(element.text=='SUFeedURL') then 
+        break 
+      end
+    end
+    
+    # Set the proper URL value
+    if @verType == 'CUSTOMER'
+      root.elements[1].elements[index+1].text = "#{@customer_base_url}/appcast" 
+    else
+      root.elements[1].elements[index+1].text = "#{@tester_base_url}/appcast"
+    end
+    
+    # Save the new value
+    file = File.new("Info.plist", "w") 
+    file.write(doc.write)
+    file.close
+    
+  end
+  
+  
   def set_marketing_version
     puts "Set marcketing version"
     #TODO vefify that the current market version is smaller that the new.
@@ -13,10 +44,11 @@ module ChocTop::Appcast
       sh "git reset --hard" unless @git==false 
       if @versioning == true
         sh "agvtool next-version -all" 
-        load_defaults
         if @verType == 'CUSTOMER'
            set_marketing_version
         end
+        load_defaults 
+        set_sparcke_configuration
       end
       if @git == true then
         comment  = "#{@marketVersion}(#{@version})_#{@verType}"
@@ -57,6 +89,7 @@ module ChocTop::Appcast
                           :length => "#{File.size(pkg)}", 
                           :type => "application/dmg",
                           :"sparkle:version" => version,
+                          :"sparkle:shortVersionString" => @marketVersion,
                           :"sparkle:dsaSignature" => dsa_signature)
           end
         end
@@ -105,7 +138,6 @@ module ChocTop::Appcast
     _host = host.blank? ? "" : "#{host}:"
     _user = user.blank? ? "" : "#{user}@"
     sh %{rsync #{rsync_args} #{build_path}/ #{_user}#{_host}#{remote_dir}}
-    #puts %{rsync #{rsync_args} #{build_path}/ #{_user}#{_host}#{remote_dir}}
   end
   
   # Returns a file path to the dsa_priv.pem file

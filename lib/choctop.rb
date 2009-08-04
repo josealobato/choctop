@@ -9,6 +9,9 @@ require "uri"
 require "osx/cocoa"
 require "active_support"
 require "RedCloth"
+require 'rexml/document'  
+
+include REXML 
 
 class ChocTop
   VERSION = '0.10.0'
@@ -160,8 +163,19 @@ class ChocTop
   attr_accessor :marketVersion    
   
   # Flag to enable the GIT commiting
-  attr_accessor :git
+  attr_accessor :git    
   
+  # Accessors for customer
+  attr_accessor :customer_user
+  attr_accessor :customer_host
+  attr_accessor :customer_base_url
+  attr_accessor :customer_remote_dir
+  
+  # Accessors for customer
+  attr_accessor :tester_user
+  attr_accessor :tester_host
+  attr_accessor :tester_base_url
+  attr_accessor :tester_remote_dir
   
   def icon_text_size=(size)
     @icon_text_size = size.to_i
@@ -199,17 +213,20 @@ class ChocTop
     
     @versioning ||= false
     @versioning==false ? @git=false : @git||=false
-    @versioning==true ? (puts "Versioning ON") : (puts "Versioning OFF")
-    @git==true ? (puts "GIT ON") : (puts "GIT OFF")
+    #@versioning==true ? (puts "Versioning ON") : (puts "Versioning OFF")
+    #@git==true ? (puts "GIT ON") : (puts "GIT OFF")
     if @versioning then
       @marketVersion = info_plist['CFBundleShortVersionString']
     end
     
     
     
-    if @su_feed_url = info_plist['SUFeedURL']
-      @appcast_filename ||= File.basename(su_feed_url)
-      @base_url ||= File.dirname(su_feed_url)
+    if @su_feed_url = info_plist['SUFeedURL'] 
+      #puts "--------------- su_feed_url: #{@su_feed_url}"
+      @appcast_filename = 'appcast'#File.basename(su_feed_url)
+      #puts "--------------- appcast_filename: #{@appcast_filename}"
+      @base_url = File.dirname(su_feed_url)
+      #puts "--------------- base_url: #{@base_url}"      
     end
     if @base_url
       @host ||= URI.parse(base_url).host
@@ -249,8 +266,18 @@ class ChocTop
       if ENV['marketVersion']!=nil
         @verType = 'CUSTOMER'
         @marketVersion = ENV['marketVersion']
+        @user = @customer_user
+        @host = @customer_host
+        @base_url = @customer_base_url
+        @remote_dir = @customer_remote_dir
+        
       else
         @verType = 'TESTER'
+        @user = @tester_user
+        @host = @tester_host
+        @base_url = @tester_base_url
+        @remote_dir = @tester_remote_dir
+        
       end 
       puts "Creating a #{@verType} with market version #{@marketVersion!=nil ? @marketVersion : 'unchanged'}."
     end
@@ -272,7 +299,7 @@ class ChocTop
     end
     
     desc "Create/update the appcast file"
-    task :feed do
+    task :feed => [:versionType, :dmg] do
       make_appcast
       make_index_redirect
       make_release_notes
